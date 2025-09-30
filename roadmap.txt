@@ -1,0 +1,11 @@
+notebook/
+├── cmd/            # فایل main
+├── internal/
+│   ├── models/     # تعریف مدل‌های دیتابیس
+│   ├── handlers/   # هندلرهای HTTP
+│   ├── db/         # اتصال دیتابیس
+│   └── auth/       # احراز هویت و JWT
+├── web/
+│   ├── templates/  # فایل‌های HTML
+│   └── static/     # CSS/JS
+└── go.mod
