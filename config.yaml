@@ -1,0 +1,4 @@
+Port: "8080"
+JWTSecret: "abcd"
+AccessTokenExp: 24h
+DBPath: "./notebooq.db"

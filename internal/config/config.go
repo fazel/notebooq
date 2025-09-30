@@ -1,34 +1,27 @@
 package config
 
-import (
-	"time"
-
-	"github.com/spf13/viper"
-)
+import "time"
 
 type Config struct {
-	Port           string
-	DatabaseURL    string
+	DBPath         string
 	JWTSecret      string
 	AccessTokenExp time.Duration
+	SMTPHost       string
+	SMTPPort       int
+	SMTPEmail      string
+	SMTPPassword   string
+	Port           string
 }
 
 func Load() (*Config, error) {
-	viper.SetConfigType("env")
-	viper.AutomaticEnv()
-
-	viper.SetDefault("PORT", "8080")
-	viper.SetDefault("ACCESS_TOKEN_EXP", "15m")
-
 	cfg := &Config{
-		Port:        viper.GetString("PORT"),
-		DatabaseURL: viper.GetString("DATABASE_URL"),
-		JWTSecret:   viper.GetString("JWT_SECRET"),
+		DBPath:         "notebooq.db",
+		JWTSecret:      "your-secret-key",
+		AccessTokenExp: time.Hour * 24,
+		SMTPHost:       "smtp.gmail.com",
+		SMTPPort:       587,
+		Port:           "8080",
 	}
-
-	exp := viper.GetString("ACCESS_TOKEN_EXP")
-	dur, _ := time.ParseDuration(exp)
-	cfg.AccessTokenExp = dur
 
 	return cfg, nil
 }

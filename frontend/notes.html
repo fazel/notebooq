@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notes - Notebooq</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+        <span class="navbar-brand">Notebooq</span>
+        <div class="d-flex">
+            <button id="profileBtn" class="btn btn-outline-secondary me-2">Profile</button>
+            <button id="logoutBtn" class="btn btn-danger">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="card p-3 mb-3">
+        <h5>Add Note</h5>
+        <form id="noteForm">
+            <input type="text" id="title" class="form-control mb-2" placeholder="Title" required>
+            <textarea id="content" class="form-control mb-2" placeholder="Content" rows="3" required></textarea>
+            <button class="btn btn-success w-100" type="submit">Add Note</button>
+        </form>
+    </div>
+
+    <div id="notesList" class="row gy-3"></div>
+</div>
+
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '/login.html';
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+    });
+
+    // Profile
+    document.getElementById('profileBtn').addEventListener('click', () => {
+        window.location.href = '/profile.html';
+    });
+
+    // Fetch and display notes
+    async function loadNotes() {
+        const res = await fetch('/api/notes', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const notes = await res.json();
+        const list = document.getElementById('notesList');
+        list.innerHTML = '';
+        notes.forEach(n => {
+            const card = document.createElement('div');
+            card.className = 'col-md-4';
+            card.innerHTML = `
+            <div class="card p-3 shadow-sm">
+              <h5>${n.title}</h5>
+              <p>${n.content.replace(/\n/g, '<br>')}</p>
+            </div>`;
+            list.appendChild(card);
+        });
+    }
+
+    // Add note
+    document.getElementById('noteForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+
+        const res = await fetch('/api/notes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ title, content })
+        });
+
+        if (res.ok) {
+            document.getElementById('noteForm').reset();
+            loadNotes();
+        } else {
+            alert('Failed to add note');
+        }
+    });
+
+    loadNotes();
+</script>
+</body>
+</html>

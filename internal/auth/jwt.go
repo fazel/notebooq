@@ -4,25 +4,28 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/fazel/notebooq/internal/service"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func JWTMiddleware(secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if auth == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing auth header"})
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "missing token"})
 			return
 		}
-		parts := strings.SplitN(auth, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid auth header"})
+		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+		claims := &service.Claims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		})
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			return
 		}
-		tokenStr := parts[1]
-		// parse token (simple check). For brevity we skip verifying claims library here
-		// In production use github.com/golang-jwt/jwt/v5 to parse and validate.
-		c.Set("user_id_from_token", tokenStr) // placeholder: handlers should parse token and extract user id
+		c.Set("userID", claims.UserID)
 		c.Next()
 	}
 }

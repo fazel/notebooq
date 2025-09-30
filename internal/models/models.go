@@ -3,11 +3,12 @@ package models
 import "time"
 
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Username  string    `gorm:"uniqueIndex;size:100" json:"username"`
-	Password  string    `json:"-"`
-	CreatedAt time.Time `json:"created_at"`
-	Notes     []Note    `gorm:"constraint:OnDelete:CASCADE" json:"notes,omitempty"`
+	ID         uint `gorm:"primaryKey"`
+	Username   string
+	Password   string
+	Email      string
+	IsVerified bool
+	VerifyCode string
 }
 
 type Note struct {

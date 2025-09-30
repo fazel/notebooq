@@ -24,25 +24,45 @@ func main() {
 		log.Fatalf("failed to connect db: %v", err)
 	}
 
-	// run migrations
-	dbConn.AutoMigrate(&models.User{}, &models.Note{})
+	// migrations
+	if err := dbConn.AutoMigrate(&models.User{}, &models.Note{}); err != nil {
+		log.Fatalf("migration failed: %v", err)
+	}
+
+	userHandler := handlers.NewUserHandler(dbConn, cfg)
+	noteHandler := handlers.NewNoteHandler(dbConn)
 
 	r := gin.Default()
 
-	// public routes
-	r.POST("/api/signup", handlers.NewUserHandler(dbConn, cfg).Signup)
-	r.POST("/api/login", handlers.NewUserHandler(dbConn, cfg).Login)
+	// فایل‌های استاتیک frontend
+	r.Static("/js", "./frontend/js")
+	r.StaticFile("/login.html", "./frontend/login.html")
+	r.StaticFile("/signup.html", "./frontend/signup.html")
+	r.StaticFile("/notes.html", "./frontend/notes.html")
+	r.StaticFile("/verify.html", "./frontend/verify.html")
+	r.StaticFile("/profile.html", "./frontend/profile.html")
 
-	// protected
+	// default / → redirect login
+	r.GET("/", func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/login.html")
+	})
+
+	// public API
+	r.POST("/api/signup", userHandler.Signup)
+	r.POST("/api/login", userHandler.Login)
+	r.POST("/api/verify-email", userHandler.VerifyEmail)
+
+	// protected API
 	authMiddleware := auth.JWTMiddleware(cfg.JWTSecret)
 	authGroup := r.Group("/api")
 	authGroup.Use(authMiddleware)
 	{
-		authGroup.GET("/notes", handlers.NewNoteHandler(dbConn).ListNotes)
-		authGroup.POST("/notes", handlers.NewNoteHandler(dbConn).CreateNote)
-		authGroup.GET("/notes/:id", handlers.NewNoteHandler(dbConn).GetNote)
-		authGroup.PUT("/notes/:id", handlers.NewNoteHandler(dbConn).UpdateNote)
-		authGroup.DELETE("/notes/:id", handlers.NewNoteHandler(dbConn).DeleteNote)
+		authGroup.GET("/notes", noteHandler.ListNotes)
+		authGroup.POST("/notes", noteHandler.CreateNote)
+		authGroup.GET("/notes/:id", noteHandler.GetNote)
+		authGroup.PUT("/notes/:id", noteHandler.UpdateNote)
+		authGroup.DELETE("/notes/:id", noteHandler.DeleteNote)
+		authGroup.GET("/profile", userHandler.Profile)
 	}
 
 	srv := &http.Server{
